@@ -108,6 +108,18 @@ print_header() {
 check_dependencies() {
   local missing=0
 
+  if ! command -v gh >/dev/null 2>&1; then
+    status_error "gh (GitHub CLI) is not installed"
+    box_text "Install: https://cli.github.com"
+    missing=1
+  elif ! gh auth status >/dev/null 2>&1; then
+    status_error "gh is not authenticated"
+    box_text "Run: gh auth login"
+    missing=1
+  else
+    status_ok "gh authenticated"
+  fi
+
   if ! command -v git >/dev/null 2>&1; then
     status_error "git is not installed"
     box_text "Install: https://git-scm.com/downloads"

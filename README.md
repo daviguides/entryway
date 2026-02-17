@@ -5,8 +5,10 @@ Claude Code starter kit — settings, hooks, status line, and notifications.
 ## Install
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/entryway/main/install.sh)"
+bash -c "$(gh api repos/daviguides/entryway/contents/install.sh --jq '.content' | base64 -d)"
 ```
+
+Requires [GitHub CLI](https://cli.github.com) authenticated (`gh auth login`).
 
 ## What it installs
 
@@ -21,7 +23,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/entryway/main
 
 ## Requirements
 
-- Python 3.13+
+- [gh](https://cli.github.com) (authenticated)
 - [uv](https://docs.astral.sh/uv/)
 - git
 
