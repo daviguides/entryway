@@ -1,50 +1,73 @@
 #!/bin/bash
-# Test script for status_line.py
+# Test script for status_line
 # Tests various scenarios with mock data
 
 echo "======================================================"
-echo "Test 1: Basic status line (model + dir + git)"
+echo "Test 1: Full status line (all fields)"
 echo "======================================================"
 cat <<'EOF' | status_line
 {
-  "hook_event_name": "Status",
-  "session_id": "test123",
-  "transcript_path": "/tmp/test.json",
-  "cwd": "/Users/daviguides/work/sources/my/genai/ymd-prompt",
-  "model": {
-    "id": "claude-sonnet-4",
-    "display_name": "Sonnet 4"
-  },
-  "workspace": {
-    "current_dir": "/Users/daviguides/work/sources/my/genai/ymd-prompt",
-    "project_dir": "/Users/daviguides/work/sources/my/genai/ymd-prompt"
-  },
+  "model": { "display_name": "Opus 4.6" },
+  "workspace": { "current_dir": "/Users/dev/project" },
   "version": "1.0.80",
-  "output_style": { "name": "default" },
-  "cost": {
-    "total_cost_usd": 0.01234,
-    "total_duration_ms": 45000,
-    "total_api_duration_ms": 2300,
-    "total_lines_added": 156,
-    "total_lines_removed": 23
-  }
+  "cost": { "total_cost_usd": 12.27 },
+  "context_window": {
+    "used_percentage": 78.0,
+    "context_window_size": 200000
+  },
+  "session_id": "7940d8f1-b2e2-4e1c-8867-8fc60cde818d"
 }
 EOF
 echo ""
 echo ""
 
 echo "======================================================"
-echo "Test 2: Without git repository"
+echo "Test 2: Low context usage (green)"
+echo "======================================================"
+cat <<'EOF' | status_line
+{
+  "model": { "display_name": "Sonnet 4.5" },
+  "workspace": { "current_dir": "/tmp/test" },
+  "cost": { "total_cost_usd": 0.05 },
+  "context_window": {
+    "used_percentage": 15.3,
+    "context_window_size": 200000
+  },
+  "session_id": "abc123"
+}
+EOF
+echo ""
+echo ""
+
+echo "======================================================"
+echo "Test 3: Critical context usage (>90%, bold red)"
+echo "======================================================"
+cat <<'EOF' | status_line
+{
+  "model": { "display_name": "Opus 4.6" },
+  "workspace": { "current_dir": "/home/user/big-project" },
+  "cost": { "total_cost_usd": 45.89 },
+  "context_window": {
+    "used_percentage": 94.7,
+    "context_window_size": 200000
+  },
+  "session_id": "def456"
+}
+EOF
+echo ""
+echo ""
+
+echo "======================================================"
+echo "Test 4: Without git repository"
 echo "======================================================"
 cd /tmp
 cat <<'EOF' | status_line
 {
-  "hook_event_name": "Status",
-  "model": {
-    "display_name": "Opus"
-  },
-  "workspace": {
-    "current_dir": "/tmp"
+  "model": { "display_name": "Haiku 4.5" },
+  "workspace": { "current_dir": "/tmp" },
+  "context_window": {
+    "used_percentage": 0,
+    "context_window_size": 200000
   }
 }
 EOF
@@ -53,16 +76,23 @@ echo ""
 echo ""
 
 echo "======================================================"
-echo "Test 3: Minimal data (fallback handling)"
+echo "Test 5: Minimal data (fallback handling)"
 echo "======================================================"
 echo '{}' | status_line
 echo ""
 echo ""
 
 echo "======================================================"
-echo "Test 4: Invalid JSON (error handling)"
+echo "Test 6: Invalid JSON (error handling)"
 echo "======================================================"
 echo 'invalid json' | status_line
+echo ""
+echo ""
+
+echo "======================================================"
+echo "Test 7: Echo mode (sample data)"
+echo "======================================================"
+status_line --echo
 echo ""
 echo ""
 
