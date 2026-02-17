@@ -1,7 +1,12 @@
-# Plugins to add to user's enabledPlugins
-# Format: plugin_name: enabled (true/false)
-# These are merged into the user's settings — existing plugins are preserved.
+# Plugins to install
+# name: plugin identifier for enabledPlugins
+# install: URL of install.sh (optional, omit if no installer)
 
-arche@daviguides: true
-zazen@daviguides: true
-shodo@daviguides: true
+- name: arche@daviguides
+  install: https://raw.githubusercontent.com/daviguides/arche/main/install.sh
+
+- name: zazen@daviguides
+  install: https://raw.githubusercontent.com/daviguides/zazen/main/install.sh
+
+- name: shodo@daviguides
+  install: https://raw.githubusercontent.com/daviguides/shodo/main/install.sh

@@ -3,7 +3,7 @@
 Performs intelligent merge:
 - hooks, statusLine: REPLACE (entryway core)
 - permissions (allow/deny/ask): MERGE (keep user's, add new)
-- enabledPlugins: MERGE (keep user's, add new)
+- enabledPlugins: MERGE from plugins.yaml + entryway.yaml extras
 - alwaysThinkingEnabled: SET IF ABSENT
 - unknown fields: PRESERVE
 """
@@ -27,6 +27,14 @@ SETTINGS_FILE = CLAUDE_DIR / "settings.json"
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_FILE = PACKAGE_DIR.parent / "settings.json"
 PLUGINS_FILE = PACKAGE_DIR / "data" / "plugins.yaml"
+EXTRA_PLUGINS_FILE = (
+    Path.home()
+    / "work"
+    / "sources"
+    / "remote-dev-node"
+    / "data"
+    / "entryway.yaml"
+)
 
 # Fields that replace entirely (entryway core)
 REPLACE_FIELDS = {"hooks", "statusLine"}
@@ -38,48 +46,73 @@ MERGE_LIST_FIELDS = {
     ("permissions", "ask"),
 }
 
-# Fields that merge dicts (keep existing, add new keys)
-MERGE_DICT_FIELDS = {"enabledPlugins"}
-
 # Fields set only if absent
 SET_IF_ABSENT_FIELDS = {"alwaysThinkingEnabled"}
 
 
-def load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+# ============================================================
+# Plugin loading
+# ============================================================
 
 
-def load_plugins(path: Path) -> dict[str, bool]:
-    """Load plugins from YAML file."""
+def load_plugin_list(path: Path) -> list[dict]:
+    """Load plugins from YAML (list of {name, install?})."""
     if not path.exists():
-        return {}
+        return []
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return raw if isinstance(raw, dict) else {}
+    if isinstance(raw, list):
+        return [p for p in raw if isinstance(p, dict) and "name" in p]
+    return []
 
 
-EXTRA_PLUGINS_FILE = (
-    Path.home() / "work" / "sources" / "remote-dev-node" / "data" / "entryway.yaml"
-)
-
-
-def find_extra_plugins() -> tuple[Path | None, dict[str, bool]]:
-    """Load extra plugins from fixed path if it exists.
-
-    Returns (path, plugins) if found, (None, {}) otherwise.
-    """
+def load_extra_plugins() -> tuple[Path | None, list[dict]]:
+    """Load extra plugins from fixed path if it exists."""
     if not EXTRA_PLUGINS_FILE.exists():
-        return None, {}
+        return None, []
     try:
         raw = yaml.safe_load(
             EXTRA_PLUGINS_FILE.read_text(encoding="utf-8")
         )
         if isinstance(raw, dict) and "plugins-extra" in raw:
             extras = raw["plugins-extra"]
-            if isinstance(extras, dict):
-                return EXTRA_PLUGINS_FILE, extras
+            if isinstance(extras, list):
+                plugins = [
+                    p for p in extras if isinstance(p, dict) and "name" in p
+                ]
+                return EXTRA_PLUGINS_FILE, plugins
     except (yaml.YAMLError, OSError):
         pass
-    return None, {}
+    return None, []
+
+
+def get_all_plugins() -> tuple[list[dict], Path | None]:
+    """Get combined plugin list (base + extras).
+
+    Returns (plugins, extra_path or None).
+    """
+    plugins = load_plugin_list(PLUGINS_FILE)
+    extra_path, extras = load_extra_plugins()
+    if extras:
+        # Deduplicate by name, extras win
+        existing = {p["name"] for p in plugins}
+        for p in extras:
+            if p["name"] not in existing:
+                plugins.append(p)
+    return plugins, extra_path
+
+
+def plugins_to_enabled_dict(plugins: list[dict]) -> dict[str, bool]:
+    """Convert plugin list to enabledPlugins dict."""
+    return {p["name"]: True for p in plugins}
+
+
+# ============================================================
+# JSON helpers
+# ============================================================
+
+
+def load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def save_json(path: Path, data: dict) -> None:
@@ -88,6 +121,11 @@ def save_json(path: Path, data: dict) -> None:
         json.dumps(data, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+
+
+# ============================================================
+# Merge logic
+# ============================================================
 
 
 def merge_settings(
@@ -120,7 +158,7 @@ def merge_settings(
                 "defaultMode", "default"
             )
 
-    # 3. Merge enabledPlugins from plugins.yaml
+    # 3. Merge enabledPlugins
     if plugins:
         user_plugins = result.get("enabledPlugins", {})
         merged = dict(user_plugins)
@@ -148,6 +186,11 @@ def backup_settings() -> Path | None:
     return backup
 
 
+# ============================================================
+# CLI
+# ============================================================
+
+
 @app.command()
 def main(
     dry_run: bool = typer.Option(
@@ -156,29 +199,45 @@ def main(
     template: Path = typer.Option(
         TEMPLATE_FILE, "--template", "-t", help="Template settings.json"
     ),
+    list_installers: bool = typer.Option(
+        False,
+        "--list-installers",
+        help="Output plugin installers as name|url lines",
+    ),
 ) -> None:
     """Merge entryway settings into ~/.claude/settings.json."""
+    all_plugins, extra_path = get_all_plugins()
+
+    # --list-installers: output for bash consumption
+    if list_installers:
+        if extra_path:
+            print(f"#extra:{extra_path}", file=sys.stderr)
+        for p in all_plugins:
+            url = p.get("install", "")
+            if url:
+                # short name: "arche@daviguides" -> "arche"
+                short = p["name"].split("@")[0]
+                print(f"{short}|{url}")
+        return
+
     if not template.exists():
         console.print(f"[red]Template not found:[/red] {template}")
         sys.exit(1)
 
     template_data = load_json(template)
-    plugins = load_plugins(PLUGINS_FILE)
+    plugins_dict = plugins_to_enabled_dict(all_plugins)
 
-    # Check for extra plugins (silent if not found)
-    extra_path, extra_plugins = find_extra_plugins()
-    if extra_plugins:
+    if extra_path:
         console.print(
             f"[dim]Extra plugins from:[/dim] {extra_path}"
         )
-        plugins = {**plugins, **extra_plugins}
 
     if SETTINGS_FILE.exists():
         user_data = load_json(SETTINGS_FILE)
-        merged = merge_settings(user_data, template_data, plugins)
+        merged = merge_settings(user_data, template_data, plugins_dict)
     else:
         user_data = {}
-        merged = merge_settings({}, template_data, plugins)
+        merged = merge_settings({}, template_data, plugins_dict)
 
     if dry_run:
         console.print("[bold]Would write:[/bold]")
@@ -195,9 +254,9 @@ def main(
     added_plugins = set(merged.get("enabledPlugins", {})) - set(
         user_data.get("enabledPlugins", {})
     )
-    added_allow = set(merged.get("permissions", {}).get("allow", [])) - set(
-        user_data.get("permissions", {}).get("allow", [])
-    )
+    added_allow = set(
+        merged.get("permissions", {}).get("allow", [])
+    ) - set(user_data.get("permissions", {}).get("allow", []))
 
     if added_plugins:
         for p in sorted(added_plugins):

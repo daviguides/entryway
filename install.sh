@@ -245,23 +245,26 @@ install_plugins() {
   printf "${CYAN}│${NC}  ${BOLD}Plugins${NC}                                            ${CYAN}│${NC}\n"
   box_separator
 
-  # Arché
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/arche/main/install.sh)" >/dev/null 2>&1 &
-  local pid=$!
-  spinner $pid "Installing arche..."
-  wait $pid && status_ok "arche installed" || status_warn "arche: install manually"
+  # Get plugin list from entryway-setup (reads plugins.yaml + extras)
+  local plugin_list
+  plugin_list=$(entryway-setup --list-installers 2>/dev/null) || {
+    status_warn "Could not read plugin list"
+    return
+  }
 
-  # Zazen
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/zazen/main/install.sh)" >/dev/null 2>&1 &
-  pid=$!
-  spinner $pid "Installing zazen..."
-  wait $pid && status_ok "zazen installed" || status_warn "zazen: install manually"
+  # Check if extras were found (stderr message)
+  if entryway-setup --list-installers 2>&1 >/dev/null | grep -q "#extra:"; then
+    status_info "Extra plugins detected"
+  fi
 
-  # Shodo
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/shodo/main/install.sh)" >/dev/null 2>&1 &
-  pid=$!
-  spinner $pid "Installing shodo..."
-  wait $pid && status_ok "shodo installed" || status_warn "shodo: install manually"
+  # Install each plugin
+  while IFS='|' read -r name url; do
+    [ -z "$name" ] && continue
+    bash -c "$(curl -fsSL "$url")" >/dev/null 2>&1 &
+    local pid=$!
+    spinner $pid "Installing ${name}..."
+    wait $pid && status_ok "${name} installed" || status_warn "${name}: install manually"
+  done <<< "$plugin_list"
 }
 
 print_complete() {
