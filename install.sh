@@ -224,7 +224,7 @@ make_scripts_executable() {
 setup_settings() {
   mkdir -p "$CLAUDE_DIR"
 
-  entryway-setup --template "$INSTALL_DIR/settings.json" 2>/dev/null &
+  entryway-setup --template "$INSTALL_DIR/settings.json" >/dev/null 2>&1 &
   local pid=$!
   spinner $pid "Merging settings..."
   wait $pid || {
@@ -246,19 +246,19 @@ install_plugins() {
   box_separator
 
   # Arché
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/arche/main/install.sh)" 2>/dev/null &
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/arche/main/install.sh)" >/dev/null 2>&1 &
   local pid=$!
   spinner $pid "Installing arche..."
   wait $pid && status_ok "arche installed" || status_warn "arche: install manually"
 
   # Zazen
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/zazen/main/install.sh)" 2>/dev/null &
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/zazen/main/install.sh)" >/dev/null 2>&1 &
   pid=$!
   spinner $pid "Installing zazen..."
   wait $pid && status_ok "zazen installed" || status_warn "zazen: install manually"
 
   # Shodo
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/shodo/main/install.sh)" 2>/dev/null &
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/daviguides/shodo/main/install.sh)" >/dev/null 2>&1 &
   pid=$!
   spinner $pid "Installing shodo..."
   wait $pid && status_ok "shodo installed" || status_warn "shodo: install manually"
