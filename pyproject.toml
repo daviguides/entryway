@@ -23,12 +23,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/entryway"]
+packages = ["entryway"]
 
 [tool.ruff]
 line-length = 80
 target-version = "py313"
-src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
