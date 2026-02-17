@@ -1,0 +1,7 @@
+# Plugins to add to user's enabledPlugins
+# Format: plugin_name: enabled (true/false)
+# These are merged into the user's settings — existing plugins are preserved.
+
+arche@daviguides: true
+zazen@daviguides: true
+shodo@daviguides: true

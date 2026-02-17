@@ -121,10 +121,5 @@
     "command": "status_line",
     "padding": 0
   },
-  "enabledPlugins": {
-    "arche@daviguides": true,
-    "zazen@daviguides": true,
-    "shodo@daviguides": true
-  },
   "alwaysThinkingEnabled": true
 }

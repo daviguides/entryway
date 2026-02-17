@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 import typer
+import yaml
 from rich.console import Console
 
 app = typer.Typer(add_completion=False)
@@ -22,8 +23,10 @@ console = Console()
 CLAUDE_DIR = Path.home() / ".claude"
 SETTINGS_FILE = CLAUDE_DIR / "settings.json"
 
-# Resolve template relative to this package
-TEMPLATE_FILE = Path(__file__).resolve().parent.parent.parent / "settings.json"
+# Resolve paths relative to this package
+PACKAGE_DIR = Path(__file__).resolve().parent.parent
+TEMPLATE_FILE = PACKAGE_DIR.parent / "settings.json"
+PLUGINS_FILE = PACKAGE_DIR / "data" / "plugins.yaml"
 
 # Fields that replace entirely (entryway core)
 REPLACE_FIELDS = {"hooks", "statusLine"}
@@ -46,6 +49,14 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_plugins(path: Path) -> dict[str, bool]:
+    """Load plugins from YAML file."""
+    if not path.exists():
+        return {}
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return raw if isinstance(raw, dict) else {}
+
+
 def save_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -54,8 +65,10 @@ def save_json(path: Path, data: dict) -> None:
     )
 
 
-def merge_settings(user: dict, template: dict) -> dict:
-    """Merge template into user settings."""
+def merge_settings(
+    user: dict, template: dict, plugins: dict[str, bool]
+) -> dict:
+    """Merge template and plugins into user settings."""
     result = dict(user)
 
     # 1. Replace fields
@@ -82,17 +95,14 @@ def merge_settings(user: dict, template: dict) -> dict:
                 "defaultMode", "default"
             )
 
-    # 3. Merge dict fields (enabledPlugins)
-    for key in MERGE_DICT_FIELDS:
-        if key not in template:
-            continue
-        user_dict = result.get(key, {})
-        template_dict = template[key]
-        merged = dict(user_dict)
-        for k, v in template_dict.items():
+    # 3. Merge enabledPlugins from plugins.yaml
+    if plugins:
+        user_plugins = result.get("enabledPlugins", {})
+        merged = dict(user_plugins)
+        for k, v in plugins.items():
             if k not in merged:
                 merged[k] = v
-        result[key] = merged
+        result["enabledPlugins"] = merged
 
     # 4. Set if absent
     for key in SET_IF_ABSENT_FIELDS:
@@ -128,13 +138,14 @@ def main(
         sys.exit(1)
 
     template_data = load_json(template)
+    plugins = load_plugins(PLUGINS_FILE)
 
     if SETTINGS_FILE.exists():
         user_data = load_json(SETTINGS_FILE)
-        merged = merge_settings(user_data, template_data)
+        merged = merge_settings(user_data, template_data, plugins)
     else:
         user_data = {}
-        merged = template_data
+        merged = merge_settings({}, template_data, plugins)
 
     if dry_run:
         console.print("[bold]Would write:[/bold]")
