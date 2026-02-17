@@ -212,15 +212,19 @@ make_scripts_executable() {
 setup_settings() {
   mkdir -p "$CLAUDE_DIR"
 
-  if [ -f "$SETTINGS_FILE" ]; then
-    local backup="$SETTINGS_FILE.backup.$(date +%Y%m%d%H%M%S)"
-    cp "$SETTINGS_FILE" "$backup"
-    status_ok "Existing settings backed up"
-    status_info "Backup: ${backup##*/}"
-  fi
-
-  cp "$INSTALL_DIR/settings.json" "$SETTINGS_FILE"
-  status_ok "Settings installed"
+  entryway-setup --template "$INSTALL_DIR/settings.json" 2>/dev/null &
+  local pid=$!
+  spinner $pid "Merging settings..."
+  wait $pid || {
+    status_warn "Settings merge failed, copying template"
+    if [ -f "$SETTINGS_FILE" ]; then
+      local backup="$SETTINGS_FILE.backup.$(date +%Y%m%d%H%M%S)"
+      cp "$SETTINGS_FILE" "$backup"
+      status_info "Backup: ${backup##*/}"
+    fi
+    cp "$INSTALL_DIR/settings.json" "$SETTINGS_FILE"
+  }
+  status_ok "Settings configured"
 }
 
 install_plugins() {

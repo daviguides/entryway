@@ -17,6 +17,7 @@ dependencies = [
 claude_notifier = "entryway.notifier.cli:app"
 status_line = "entryway.clis.status_line:app"
 slash_command = "entryway.clis.slash_command:app"
+entryway-setup = "entryway.clis.setup:app"
 
 [build-system]
 requires = ["hatchling"]
