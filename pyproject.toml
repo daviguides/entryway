@@ -1,0 +1,46 @@
+[project]
+name = "entryway"
+version = "0.1.0"
+description = "Claude Code starter kit - settings, hooks, status line, and notifications"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "Davi Guides" }]
+dependencies = [
+    "pydantic>=2.12.0",
+    "pyyaml>=6.0.3",
+    "rich>=14.0.0",
+    "typer>=0.21.0",
+]
+
+[project.scripts]
+claude_notifier = "entryway.notifier.cli:app"
+status_line = "entryway.clis.status_line:app"
+slash_command = "entryway.clis.slash_command:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/entryway"]
+
+[tool.ruff]
+line-length = 80
+target-version = "py313"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["entryway"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "ruff>=0.14.0",
+]
