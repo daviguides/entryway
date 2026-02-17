@@ -99,8 +99,8 @@ print_header() {
   printf "\n"
   box_top
   box_empty
-  printf "${CYAN}│${NC}   ${BOLD}entryway${NC}   Claude Code Starter Kit            ${CYAN}│${NC}\n"
-  printf "${CYAN}│${NC}              v${VERSION}                                ${CYAN}│${NC}\n"
+  printf "${CYAN}│${NC}   ${BOLD}entryway${NC}   Claude Code Starter Kit                ${CYAN}│${NC}\n"
+  printf "${CYAN}│${NC}              v${VERSION}                                 ${CYAN}│${NC}\n"
   box_empty
   box_separator
 }
