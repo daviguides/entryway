@@ -1,12 +1,12 @@
 # Plugins to install
 # name: plugin identifier for enabledPlugins
-# install: URL of install.sh (optional, omit if no installer)
+# repo: GitHub owner/repo (installed via gh api)
 
 - name: arche@daviguides
-  install: https://raw.githubusercontent.com/daviguides/arche/main/install.sh
+  repo: daviguides/arche
 
 - name: zazen@daviguides
-  install: https://raw.githubusercontent.com/daviguides/zazen/main/install.sh
+  repo: daviguides/zazen
 
 - name: shodo@daviguides
-  install: https://raw.githubusercontent.com/daviguides/shodo/main/install.sh
+  repo: daviguides/shodo

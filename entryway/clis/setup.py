@@ -213,11 +213,10 @@ def main(
         if extra_path:
             print(f"#extra:{extra_path}", file=sys.stderr)
         for p in all_plugins:
-            url = p.get("install", "")
-            if url:
-                # short name: "arche@daviguides" -> "arche"
+            repo = p.get("repo", "")
+            if repo:
                 short = p["name"].split("@")[0]
-                print(f"{short}|{url}")
+                print(f"{short}|{repo}")
         return
 
     if not template.exists():

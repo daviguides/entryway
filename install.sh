@@ -257,10 +257,10 @@ install_plugins() {
     status_info "Extra plugins detected"
   fi
 
-  # Install each plugin
-  while IFS='|' read -r name url; do
+  # Install each plugin via gh api (works for private and public repos)
+  while IFS='|' read -r name repo; do
     [ -z "$name" ] && continue
-    bash -c "$(curl -fsSL "$url")" >/dev/null 2>&1 &
+    bash -c "$(gh api "repos/${repo}/contents/install.sh" --jq '.content' | base64 -d)" >/dev/null 2>&1 &
     local pid=$!
     spinner $pid "Installing ${name}..."
     wait $pid && status_ok "${name} installed" || status_warn "${name}: install manually"
