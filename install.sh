@@ -246,21 +246,22 @@ install_plugins() {
   box_separator
 
   # Get plugin list from entryway-setup (reads plugins.yaml + extras)
-  local plugin_list
+  local plugin_list extra_info
+  extra_info=$(entryway-setup --list-installers 2>&1 >/dev/null)
   plugin_list=$(entryway-setup --list-installers 2>/dev/null) || {
     status_warn "Could not read plugin list"
     return
   }
 
-  # Check if extras were found (stderr message)
-  if entryway-setup --list-installers 2>&1 >/dev/null | grep -q "#extra:"; then
+  # Check if extras were found
+  if echo "$extra_info" | grep -q "#extra:"; then
     status_info "Extra plugins detected"
   fi
 
   # Install each plugin via gh api (works for private and public repos)
   while IFS='|' read -r name repo; do
     [ -z "$name" ] && continue
-    bash -c "$(gh api "repos/${repo}/contents/install.sh" --jq '.content' | base64 -d)" >/dev/null 2>&1 &
+    (bash -c "$(gh api "repos/${repo}/contents/install.sh" --jq '.content' | base64 -d)") >/dev/null 2>&1 &
     local pid=$!
     spinner $pid "Installing ${name}..."
     wait $pid && status_ok "${name} installed" || status_warn "${name}: install manually"
