@@ -57,6 +57,35 @@ def load_plugins(path: Path) -> dict[str, bool]:
     return raw if isinstance(raw, dict) else {}
 
 
+def find_extra_plugins() -> tuple[Path | None, dict[str, bool]]:
+    """Search for entryway.yaml in parent dirs from cwd up to home.
+
+    Returns (path, plugins) if found, (None, {}) otherwise.
+    """
+    target = "entryway.yaml"
+    current = Path.cwd().resolve()
+    home = Path.home().resolve()
+
+    for directory in [current, *current.parents]:
+        # Search in dir and dir/data/
+        for candidate in [directory / target, directory / "data" / target]:
+            if candidate.exists():
+                try:
+                    raw = yaml.safe_load(
+                        candidate.read_text(encoding="utf-8")
+                    )
+                    if isinstance(raw, dict) and "plugins-extra" in raw:
+                        extras = raw["plugins-extra"]
+                        if isinstance(extras, dict):
+                            return candidate, extras
+                except (yaml.YAMLError, OSError):
+                    pass
+        if directory == home:
+            break
+
+    return None, {}
+
+
 def save_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -139,6 +168,14 @@ def main(
 
     template_data = load_json(template)
     plugins = load_plugins(PLUGINS_FILE)
+
+    # Check for extra plugins (silent if not found)
+    extra_path, extra_plugins = find_extra_plugins()
+    if extra_plugins:
+        console.print(
+            f"[dim]Extra plugins from:[/dim] {extra_path}"
+        )
+        plugins = {**plugins, **extra_plugins}
 
     if SETTINGS_FILE.exists():
         user_data = load_json(SETTINGS_FILE)
