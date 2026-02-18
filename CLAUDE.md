@@ -68,11 +68,11 @@ entryway/
   repo: daviguides/arche
 ```
 
-**Extra plugins** (optional) — `~/work/sources/remote-dev-node/data/entryway.yaml`:
+**Extra plugins** (optional) — set `ENTRYWAY_EXTRA_PLUGINS` env var pointing to a YAML file:
 ```yaml
 plugins-extra:
-  - name: dao@daviguides
-    repo: daviguides/dao
+  - name: my-plugin@user
+    repo: user/my-plugin
 ```
 
 All plugins install via `gh api` (works for public and private repos).
