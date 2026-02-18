@@ -27,14 +27,7 @@ SETTINGS_FILE = CLAUDE_DIR / "settings.json"
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_FILE = PACKAGE_DIR.parent / "settings.json"
 PLUGINS_FILE = PACKAGE_DIR / "data" / "plugins.yaml"
-EXTRA_PLUGINS_FILE = (
-    Path.home()
-    / "work"
-    / "sources"
-    / "remote-dev-node"
-    / "data"
-    / "entryway.yaml"
-)
+EXTRA_PLUGINS_FILE = CLAUDE_DIR / "entryway-extras.yaml"
 
 # Fields that replace entirely (entryway core)
 REPLACE_FIELDS = {"hooks", "statusLine"}

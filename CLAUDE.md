@@ -68,7 +68,7 @@ entryway/
   repo: daviguides/arche
 ```
 
-**Extra plugins** (optional) — set `ENTRYWAY_EXTRA_PLUGINS` env var pointing to a YAML file:
+**Extra plugins** (optional) — `~/.claude/entryway-extras.yaml`:
 ```yaml
 plugins-extra:
   - name: my-plugin@user
