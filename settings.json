@@ -1,125 +1,125 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(chmod:*)",
-      "Bash(echo:*)",
-      "Bash(cat:*)",
-      "Bash(test:*)",
-      "Bash(find:*)",
-      "Bash(tree:*)",
-      "Bash(mv:*)",
-      "Bash(mkdir:*)",
-      "Bash(timeout:*)",
-      "Bash(awk:*)",
-      "Bash(xargs:*)",
-      "Bash(basename:*)",
-      "Bash(sort:*)",
-      "Bash(for:*)",
-      "Bash(while:*)",
-      "Bash(do:*)",
-      "Bash(if:*)",
-      "Bash(then:*)",
-      "Bash(else:*)",
-      "Bash(fi:*)",
-      "Bash(done:*)",
-      "Bash(uv:*)",
-      "Bash(uv run pytest:*)",
-      "Bash(uv add:*)",
-      "Bash(python3:*)",
-      "Bash(python:*)",
-      "Bash(git init)",
-      "Bash(git config:*)",
-      "Bash(git add:*)",
-      "Bash(git rm:*)",
-      "Bash(git checkout:*)",
-      "Bash(git diff:*)",
-      "Bash(git -C:*)",
-      "Bash(git commit:*)",
-      "Bash(git push)",
-      "Bash(gh --version)",
-      "Bash(gh pr:*)",
-      "Bash(gh repo:*)",
-      "Bash(gh api:*)",
-      "Bash(git mv:*)",
-      "Bash(git branch:*)",
-      "Bash(git log:*)",
-      "Bash(make:*)",
-      "WebSearch",
-      "SlashCommand(/:*)",
-      "SlashCommand(/*:*)"
-    ],
-    "deny": [
-      "Bash(rm -rf:*)",
-      "Bash(git push --force:*)",
-      "Bash(git reset --hard:*)",
-      "Bash(git clean -fd:*)",
-      "Bash(sudo:*)",
-      "Bash(chmod 777:*)",
-      "Bash(chown:*)",
-      "Read(//**/.env)",
-      "Read(//**/secrets/**)",
-      "Bash(nc:*)"
-    ],
-    "ask": [
-      "Bash(git merge:*)",
-      "Bash(git rebase:*)",
-      "Bash(gh repo create:*)",
-      "Bash(gh repo delete:*)",
-      "Bash(gh pr merge:*)",
-      "Bash(gh release create:*)",
-      "Bash(rm:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)"
-    ],
-    "defaultMode": "default"
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.local/share/entryway/scripts/session-start-loader.sh"
-          }
+    "permissions": {
+        "allow": [
+            "Bash(chmod:*)",
+            "Bash(echo:*)",
+            "Bash(cat:*)",
+            "Bash(test:*)",
+            "Bash(find:*)",
+            "Bash(tree:*)",
+            "Bash(mv:*)",
+            "Bash(mkdir:*)",
+            "Bash(timeout:*)",
+            "Bash(awk:*)",
+            "Bash(xargs:*)",
+            "Bash(basename:*)",
+            "Bash(sort:*)",
+            "Bash(for:*)",
+            "Bash(while:*)",
+            "Bash(do:*)",
+            "Bash(if:*)",
+            "Bash(then:*)",
+            "Bash(else:*)",
+            "Bash(fi:*)",
+            "Bash(done:*)",
+            "Bash(uv:*)",
+            "Bash(uv run pytest:*)",
+            "Bash(uv add:*)",
+            "Bash(python3:*)",
+            "Bash(python:*)",
+            "Bash(git init)",
+            "Bash(git config:*)",
+            "Bash(git add:*)",
+            "Bash(git rm:*)",
+            "Bash(git checkout:*)",
+            "Bash(git diff:*)",
+            "Bash(git -C:*)",
+            "Bash(git commit:*)",
+            "Bash(git push)",
+            "Bash(gh --version)",
+            "Bash(gh pr:*)",
+            "Bash(gh repo:*)",
+            "Bash(gh api:*)",
+            "Bash(git mv:*)",
+            "Bash(git branch:*)",
+            "Bash(git log:*)",
+            "Bash(make:*)",
+            "WebSearch",
+            "SlashCommand(/:*)",
+            "SlashCommand(/*:*)",
+            "Bash(git merge:*)",
+            "Bash(git rebase:*)",
+            "Bash(gh pr merge:*)"
+        ],
+        "deny": [
+            "Bash(rm -rf:*)",
+            "Bash(git push --force:*)",
+            "Bash(git reset --hard:*)",
+            "Bash(git clean -fd:*)",
+            "Bash(sudo:*)",
+            "Bash(chmod 777:*)",
+            "Bash(chown:*)",
+            "Read(//**/.env)",
+            "Read(//**/secrets/**)",
+            "Bash(nc:*)"
+        ],
+        "ask": [
+            "Bash(gh repo create:*)",
+            "Bash(gh repo delete:*)",
+            "Bash(gh release create:*)",
+            "Bash(rm:*)",
+            "Bash(curl:*)",
+            "Bash(wget:*)"
+        ],
+        "defaultMode": "default"
+    },
+    "hooks": {
+        "SessionStart": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "$HOME/.local/share/entryway/scripts/session-start-loader.sh"
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "claude_notifier"
+                    }
+                ]
+            }
+        ],
+        "Notification": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "claude_notifier"
+                    }
+                ]
+            }
+        ],
+        "UserPromptSubmit": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "slash_command"
+                    }
+                ]
+            }
         ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "claude_notifier"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "claude_notifier"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "slash_command"
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "status_line",
-    "padding": 0
-  },
-  "alwaysThinkingEnabled": true
+    },
+    "statusLine": {
+        "type": "command",
+        "command": "status_line",
+        "padding": 0
+    },
+    "alwaysThinkingEnabled": true
 }
