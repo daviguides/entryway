@@ -26,7 +26,7 @@ from rich.text import Text
 SHOW_COST = True
 SHOW_VERSION = False
 SHOW_MACHINE = True
-SHOW_CONTEXT_WINDOW = True
+SHOW_CONTEXT_WINDOW = False
 SHOW_SESSION_ID = True
 
 # Context window
