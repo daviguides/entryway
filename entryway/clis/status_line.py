@@ -183,7 +183,9 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         state_label = f"[dim]{status}[/]"
 
     if machine:
-        line2_parts.append(f"[grey][[/][cyan]{machine}[/][grey]][/][grey]([/][blue]{model}[/][grey])[/]")
+        line2_parts.append(f"[grey][[/][cyan]{machine}[/][grey]][/]")
+
+    line2_parts.append(f"[grey]([/][blue]{model}[/][grey])[/]")
 
     if session_name:
         line2_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
