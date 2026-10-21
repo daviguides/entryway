@@ -30,7 +30,7 @@ SHOW_CONTEXT_WINDOW = True
 SHOW_SESSION_ID = True
 
 # Context window
-PROGRESS_BAR_WIDTH = 5
+PROGRESS_BAR_WIDTH = 8
 
 # Separators
 SEP = ""
@@ -167,7 +167,7 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         bar = create_progress_bar(used_pct)
         line1_parts.append(f"{bar}")
         line1_parts.append(f"[{color}]{used_pct:.1f}%[/]")
-        line1_parts.append(f"[blue]{format_tokens(remaining)}/{format_tokens(ctx_size)}[/]")
+        line1_parts.append(f"[blue]({format_tokens(remaining)}/{format_tokens(ctx_size)})[/]")
 
     if machine:
         line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
