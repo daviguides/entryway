@@ -23,17 +23,17 @@ from rich.console import Console
 from rich.text import Text
 
 # Display toggles
-SHOW_COST = True
+SHOW_COST = False
 SHOW_VERSION = False
 SHOW_MACHINE = True
 SHOW_CONTEXT_WINDOW = True
 SHOW_SESSION_ID = True
 
 # Context window
-PROGRESS_BAR_WIDTH = 15
+PROGRESS_BAR_WIDTH = 5
 
 # Separators
-SEP = "|"
+SEP = ""
 
 # Git
 GIT_DIR = ".git"
@@ -58,6 +58,46 @@ def get_sample_data() -> dict:
     }
 
 
+def smart_path(cwd: str) -> str:
+    """Context-aware path display, ported from _prompt_smart_path (davi-ups prompt-theme.zsh).
+
+    Priority: worktree > projects > sources > home > full path.
+    Reads SOURCES_PATH/PROJECTS_PATH env vars, defaulting to ~/work/sources and
+    ~/work/projects.
+    """
+    sources = os.environ.get("SOURCES_PATH", str(Path.home() / "work" / "sources"))
+    projects = os.environ.get("PROJECTS_PATH", str(Path.home() / "work" / "projects"))
+    home = str(Path.home())
+
+    worktree_marker = "/.worktrees/"
+    if worktree_marker in cwd:
+        before_wt, _, wt_remainder = cwd.partition(worktree_marker)
+
+        if cwd.startswith(f"{projects}/"):
+            # Externalized: <projects>/<owner>/<repo>/<name>/.worktrees/...
+            project = before_wt.rsplit("/", 1)[-1]
+        else:
+            # Source-local: <sources>/<project>/.../.worktrees/...
+            marker = f"{sources}/"
+            project = before_wt.split(marker, 1)[-1] if marker in before_wt else before_wt
+
+        subpath = wt_remainder.partition("/")[2]
+        return f"⎇ {project}/{subpath}" if subpath else f"⎇ {project}"
+
+    if cwd.startswith(projects):
+        rel = cwd[len(projects):].lstrip("/")
+        return f"⟢ {rel}" if rel else "⟢ "
+
+    if cwd.startswith(sources):
+        rel = cwd[len(sources):]
+        return f"»{rel}" if rel else "» "
+
+    if cwd.startswith(home):
+        return f"~{cwd[len(home):]}"
+
+    return cwd
+
+
 def get_usage_color(percentage: float) -> str:
     """Get Rich color based on context window usage."""
     if percentage < 50:
@@ -74,7 +114,7 @@ def create_progress_bar(percentage: float) -> str:
     filled = int((percentage / 100) * PROGRESS_BAR_WIDTH)
     empty = PROGRESS_BAR_WIDTH - filled
     color = get_usage_color(percentage)
-    return f"\\[[{color}]{'#' * filled}[/][dim]{'-' * empty}[/]]"
+    return f"\\[[{color}]{'#' * filled}[/][dim]{'•' * empty}[/]]"
 
 
 def format_tokens(tokens: int) -> str:
@@ -90,42 +130,48 @@ def generate_status_line(data: dict) -> str:
     """Generate status line from session data."""
     model = data.get("model", {}).get("display_name", "Claude")
     workspace = data.get("workspace", {})
-    dir_name = Path(workspace.get("current_dir", "~")).name or "~"
+    dir_name = smart_path(workspace.get("current_dir", "~"))
     git_branch = extract_git_branch()
     machine = os.environ.get("MACHINE") if SHOW_MACHINE else None
     cost = round(data.get("cost", {}).get("total_cost_usd", 0), 2)
     version = data.get("version", "") if SHOW_VERSION else None
+    session_name = data.get("session_name", None)
 
-    parts = [f"[bold cyan]\\[{model}][/]"]
+    parts = []
 
-    if machine:
-        parts.append(f"{SEP} [cyan]{machine}[/]")
+    # model[0:2]} {model[-1]
+    if session_name:
+        parts.append(f"[grey][[/][cyan]{ session_name }[/][grey]][/]")
 
-    parts.append(f"{SEP} [blue]{dir_name}[/]")
+    parts.append(f"{SEP}[blue]{dir_name}[/]")
 
     if git_branch:
-        parts.append(f"{SEP} [green]{git_branch}[/]")
+        parts.append(f"{SEP}[grey]([/][red]{git_branch}[/][grey])[/]")
 
     if SHOW_COST and cost and cost > 0:
-        parts.append(f"{SEP} [yellow]${cost:.2f}[/]")
+        parts.append(f"{SEP}[yellow]${cost:.2f}[/]")
 
     if version:
-        parts.append(f"{SEP} [cyan]{version}[/]")
+        parts.append(f"{SEP}[cyan]{version}[/]")
 
     if SHOW_CONTEXT_WINDOW:
         ctx = data.get("context_window", {})
         used_pct = ctx.get("used_percentage", 0) or 0
-        ctx_size = ctx.get("context_window_size", 200000) or 200000
+        ctx_size = ctx.get("context_window_size", 20000) or 20000
         remaining = int(ctx_size * ((100 - used_pct) / 100))
         color = get_usage_color(used_pct)
         bar = create_progress_bar(used_pct)
-        parts.append(f"{bar} [{color}]{used_pct:.1f}%[/]")
-        parts.append(f"[blue]~{format_tokens(remaining)} left[/]")
+        parts.append(f"{bar}")
+        parts.append(f"[{color}]{used_pct:.1f}%[/]")
+        parts.append(f"[blue]{format_tokens(remaining)}/{format_tokens(ctx_size)}[/]\n")
 
     if SHOW_SESSION_ID:
-        session_id = data.get("session_id", "")
+        session_id = data.get("session_id", "") #[:8]
         if session_id:
             parts.append(f"[dim]{session_id}[/]")
+
+    if machine:
+        parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
     return " ".join(parts)
 
@@ -192,7 +238,7 @@ def main(
         data = get_sample_data() if echo else json.load(sys.stdin)
         status = generate_status_line(data)
         ansi_output = render_to_ansi(status)
-        sys.stdout.write(ansi_output + "\n")
+        sys.stdout.write(ansi_output)# + "\n")
         sys.stdout.flush()
         sys.exit(0)
     except Exception:
