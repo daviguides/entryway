@@ -15,6 +15,7 @@ Configuration in ~/.claude/settings.json:
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -150,7 +151,8 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     line1_parts.append(f"{SEP}[blue]{dir_name}[/]")
 
     if git_branch:
-        line1_parts.append(f"{SEP}[grey]([/][red]{git_branch}[/][grey])[/]")
+        dirty = "[yellow]*[/]" if is_git_dirty() else ""
+        line1_parts.append(f"{SEP}[grey]([/][red]{git_branch}[/]{dirty}[grey])[/]")
 
     if SHOW_COST and cost and cost > 0:
         line1_parts.append(f"{SEP}[yellow]${cost:.2f}[/]")
@@ -178,6 +180,18 @@ def generate_status_line(data: dict) -> tuple[str, str]:
             line2_parts.append(f"[dim]{session_id}[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
+
+
+def is_git_dirty() -> bool:
+    """Check if working tree has uncommitted changes."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            capture_output=True, text=True, timeout=2,
+        )
+        return bool(result.stdout.strip())
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return False
 
 
 def find_git_dir() -> Path | None:
