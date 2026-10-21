@@ -173,6 +173,9 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         line1_parts.append(f"[{color}]{used_pct:.1f}%[/]")
         line1_parts.append(f"[blue]({format_tokens(remaining)}/{format_tokens(ctx_size)})[/]")
 
+    if machine:
+        line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
+
     elapsed = get_session_elapsed()
     status = session_meta.get("status", "unknown")
     if status == "busy":
@@ -181,9 +184,6 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         state_label = "[dim]idle[/]"
     else:
         state_label = f"[dim]{status}[/]"
-
-    if machine:
-        line2_parts.append(f"[grey][[/][cyan]{machine}[/][grey]][/][grey]([/][blue]{model}[/][grey])[/]")
 
     if session_name:
         line2_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
