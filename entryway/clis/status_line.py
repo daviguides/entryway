@@ -141,13 +141,15 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     machine = os.environ.get("MACHINE") if SHOW_MACHINE else None
     cost = round(data.get("cost", {}).get("total_cost_usd", 0), 2)
     version = data.get("version", "") if SHOW_VERSION else None
-    session_name = data.get("session_name", None)
+    ppid = os.getppid()
+    session_meta = get_session_meta(ppid)
+    session_name = session_meta.get("name")
 
     line1_parts = []
     line2_parts = []
 
     if session_name:
-        line1_parts.append(f"[grey][[/][cyan]{ session_name }[/][grey]][/]")
+        line1_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
 
     line1_parts.append(f"{SEP}[blue]{dir_name}[/]")
 
@@ -175,10 +177,14 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     if machine:
         line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
-    ppid = os.getppid()
     elapsed = get_session_elapsed()
-    idle = is_process_idle(ppid)
-    state_label = "[dim]idle[/]" if idle else "[green]active[/]"
+    status = session_meta.get("status", "unknown")
+    if status == "busy":
+        state_label = "[green]active[/]"
+    elif status == "idle":
+        state_label = "[dim]idle[/]"
+    else:
+        state_label = f"[dim]{status}[/]"
 
     if elapsed:
         line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
@@ -225,17 +231,15 @@ def get_session_elapsed() -> str | None:
         return None
 
 
-def is_process_idle(pid: int) -> bool:
-    """Check if process is idle (CPU < 1%)."""
+def get_session_meta(pid: int) -> dict:
+    """Read session metadata from ~/.claude/sessions/{pid}.json."""
     try:
-        result = subprocess.run(
-            ["ps", "-p", str(pid), "-o", "%cpu="],
-            capture_output=True, text=True, timeout=2,
-        )
-        cpu = float(result.stdout.strip().replace(",", "."))
-        return cpu < 1.0
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
-        return False
+        session_file = Path.home() / ".claude" / "sessions" / f"{pid}.json"
+        if session_file.exists():
+            return json.loads(session_file.read_text())
+    except (OSError, json.JSONDecodeError):
+        pass
+    return {}
 
 
 def is_git_dirty() -> bool:
