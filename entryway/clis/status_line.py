@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import typer
@@ -176,11 +177,13 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     line1_parts.append(f"[grey]([/][blue]{model}[/][grey])[/]")
 
     elapsed = get_session_elapsed()
+    transcript_path = data.get("transcript_path")
     status = session_meta.get("status", "unknown")
     if status == "busy":
         state_label = "[green]active[/]"
     elif status == "idle":
-        state_label = "[dim]idle[/]"
+        idle_dur = get_idle_duration(transcript_path) if transcript_path else None
+        state_label = f"[dim]idle {idle_dur}[/]" if idle_dur else "[dim]idle[/]"
     else:
         state_label = f"[dim]{status}[/]"
 
@@ -234,6 +237,38 @@ def get_session_elapsed() -> str | None:
             return f"{days}d{hours}h"
         return raw
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
+        return None
+
+
+def get_idle_duration(transcript_path: str) -> str | None:
+    """Get time since last message from transcript JSONL."""
+    try:
+        result = subprocess.run(
+            ["tail", "-80", transcript_path],
+            capture_output=True, text=True, timeout=2,
+        )
+        if not result.stdout.strip():
+            return None
+        last_ts = None
+        for line in reversed(result.stdout.strip().split("\n")):
+            entry = json.loads(line)
+            if entry.get("type") in ("user", "assistant") and "timestamp" in entry:
+                last_ts = entry["timestamp"]
+                break
+        if not last_ts:
+            return None
+        last_dt = datetime.fromisoformat(last_ts.replace("Z", "+00:00"))
+        delta = datetime.now(timezone.utc) - last_dt
+        total_seconds = int(delta.total_seconds())
+        if total_seconds < 60:
+            return "<1m"
+        minutes = total_seconds // 60
+        if minutes < 60:
+            return f"{minutes}m"
+        hours = minutes // 60
+        mins = minutes % 60
+        return f"{hours}h{mins}m"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, json.JSONDecodeError, ValueError):
         return None
 
 
