@@ -184,11 +184,13 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     else:
         state_label = f"[dim]{status}[/]"
 
+    host_session = ""
     if machine:
-        line2_parts.append(f"[grey][[/][cyan]{machine}[/][grey]][/]")
-
+        host_session += f"[grey][[/][cyan]{machine}[/][grey]][/]"
     if session_name:
-        line2_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
+        host_session += f"[grey]([/][cyan]{session_name}[/][grey])[/]"
+    if host_session:
+        line2_parts.append(host_session)
 
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
