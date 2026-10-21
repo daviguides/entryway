@@ -188,13 +188,13 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     if session_name:
         line2_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
 
-    if elapsed:
-        line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
-
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
         if session_id:
             line2_parts.append(f"[dim]sid:{session_id}[/]")
+
+    if elapsed:
+        line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
 
