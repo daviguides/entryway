@@ -194,7 +194,7 @@ def generate_status_line(data: dict) -> tuple[str, str]:
             line2_parts.append(f"[dim]sid:{session_id}[/]")
 
     if elapsed:
-        line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
+        line2_parts.append(f"🕐 [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
 
