@@ -177,7 +177,8 @@ def generate_status_line(data: dict) -> tuple[str, str]:
 
     elapsed = get_session_elapsed()
     if elapsed:
-        line2_parts.append(f"[green]{elapsed}[/]")
+        ppid = os.getppid()
+        line2_parts.append(f"[green]{elapsed}[/] [dim]pid:{ppid}[/]")
 
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
