@@ -169,13 +169,13 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         line1_parts.append(f"[{color}]{used_pct:.1f}%[/]")
         line1_parts.append(f"[blue]{format_tokens(remaining)}/{format_tokens(ctx_size)}[/]")
 
+    if machine:
+        line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
+
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
         if session_id:
             line2_parts.append(f"[dim]{session_id}[/]")
-
-    if machine:
-        line2_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
 
