@@ -15,6 +15,7 @@ Configuration in ~/.claude/settings.json:
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -174,12 +175,50 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     if machine:
         line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
+    elapsed = get_session_elapsed()
+    if elapsed:
+        line2_parts.append(f"[green]{elapsed}[/]")
+
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
         if session_id:
             line2_parts.append(f"[dim]{session_id}[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
+
+
+def get_session_elapsed() -> str | None:
+    """Get elapsed time of parent Claude Code process via PPID."""
+    try:
+        ppid = os.getppid()
+        result = subprocess.run(
+            ["ps", "-p", str(ppid), "-o", "etime="],
+            capture_output=True, text=True, timeout=2,
+        )
+        raw = result.stdout.strip()
+        if not raw:
+            return None
+        # ps etime format: [[DD-]HH:]MM:SS → compact "2h25m" / "45m" / "3d2h"
+        parts = re.split(r"[-:]", raw)
+        parts = [int(p) for p in parts]
+        if len(parts) == 2:
+            minutes, _ = parts
+            if minutes < 1:
+                return "<1m"
+            return f"{minutes}m"
+        if len(parts) == 3:
+            hours, minutes, _ = parts
+            if hours == 0:
+                return f"{minutes}m"
+            return f"{hours}h{minutes}m"
+        if len(parts) == 4:
+            days, hours, minutes, _ = parts
+            if days == 0:
+                return f"{hours}h{minutes}m"
+            return f"{days}d{hours}h"
+        return raw
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
+        return None
 
 
 def is_git_dirty() -> bool:
