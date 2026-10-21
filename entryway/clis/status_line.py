@@ -126,8 +126,12 @@ def format_tokens(tokens: int) -> str:
     return f"{tokens / 1_000_000:.2f}M"
 
 
-def generate_status_line(data: dict) -> str:
-    """Generate status line from session data."""
+def generate_status_line(data: dict) -> tuple[str, str]:
+    """Generate two-line status bar from session data.
+
+    Line 1: session, dir, branch, context window.
+    Line 2: session ID, machine/model.
+    """
     model = data.get("model", {}).get("display_name", "Claude")
     workspace = data.get("workspace", {})
     dir_name = smart_path(workspace.get("current_dir", "~"))
@@ -137,22 +141,22 @@ def generate_status_line(data: dict) -> str:
     version = data.get("version", "") if SHOW_VERSION else None
     session_name = data.get("session_name", None)
 
-    parts = []
+    line1_parts = []
+    line2_parts = []
 
-    # model[0:2]} {model[-1]
     if session_name:
-        parts.append(f"[grey][[/][cyan]{ session_name }[/][grey]][/]")
+        line1_parts.append(f"[grey][[/][cyan]{ session_name }[/][grey]][/]")
 
-    parts.append(f"{SEP}[blue]{dir_name}[/]")
+    line1_parts.append(f"{SEP}[blue]{dir_name}[/]")
 
     if git_branch:
-        parts.append(f"{SEP}[grey]([/][red]{git_branch}[/][grey])[/]")
+        line1_parts.append(f"{SEP}[grey]([/][red]{git_branch}[/][grey])[/]")
 
     if SHOW_COST and cost and cost > 0:
-        parts.append(f"{SEP}[yellow]${cost:.2f}[/]")
+        line1_parts.append(f"{SEP}[yellow]${cost:.2f}[/]")
 
     if version:
-        parts.append(f"{SEP}[cyan]{version}[/]")
+        line1_parts.append(f"{SEP}[cyan]{version}[/]")
 
     if SHOW_CONTEXT_WINDOW:
         ctx = data.get("context_window", {})
@@ -161,19 +165,19 @@ def generate_status_line(data: dict) -> str:
         remaining = int(ctx_size * ((100 - used_pct) / 100))
         color = get_usage_color(used_pct)
         bar = create_progress_bar(used_pct)
-        parts.append(f"{bar}")
-        parts.append(f"[{color}]{used_pct:.1f}%[/]")
-        parts.append(f"[blue]{format_tokens(remaining)}/{format_tokens(ctx_size)}[/]\n")
+        line1_parts.append(f"{bar}")
+        line1_parts.append(f"[{color}]{used_pct:.1f}%[/]")
+        line1_parts.append(f"[blue]{format_tokens(remaining)}/{format_tokens(ctx_size)}[/]")
 
     if SHOW_SESSION_ID:
-        session_id = data.get("session_id", "") #[:8]
+        session_id = data.get("session_id", "")
         if session_id:
-            parts.append(f"[dim]{session_id}[/]")
+            line2_parts.append(f"[dim]{session_id}[/]")
 
     if machine:
-        parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
+        line2_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
-    return " ".join(parts)
+    return " ".join(line1_parts), " ".join(line2_parts)
 
 
 def find_git_dir() -> Path | None:
@@ -236,9 +240,13 @@ def main(
     """Generate status line for Claude Code."""
     try:
         data = get_sample_data() if echo else json.load(sys.stdin)
-        status = generate_status_line(data)
-        ansi_output = render_to_ansi(status)
-        sys.stdout.write(ansi_output)# + "\n")
+        line1, line2 = generate_status_line(data)
+        ansi1 = render_to_ansi(line1)
+        sys.stdout.write(ansi1)
+        if line2:
+            sys.stdout.write("\n")
+            ansi2 = render_to_ansi(line2)
+            sys.stdout.write(ansi2)
         sys.stdout.flush()
         sys.exit(0)
     except Exception:
