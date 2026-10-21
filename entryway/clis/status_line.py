@@ -148,8 +148,7 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     line1_parts = []
     line2_parts = []
 
-    if session_name:
-        line1_parts.append(f"[grey][[/][cyan]{session_name}[/][grey]][/]")
+    pass  # session_name moved to line 2
 
     line1_parts.append(f"{SEP}[blue]{dir_name}[/]")
 
@@ -185,6 +184,9 @@ def generate_status_line(data: dict) -> tuple[str, str]:
         state_label = "[dim]idle[/]"
     else:
         state_label = f"[dim]{status}[/]"
+
+    if session_name:
+        line2_parts.append(f"[cyan]{session_name}[/]")
 
     if elapsed:
         line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
