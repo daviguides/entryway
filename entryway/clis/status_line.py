@@ -175,15 +175,18 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     if machine:
         line1_parts.append(f"{SEP}[grey][[/][cyan]{machine}[/][grey]][grey]([/][blue]{model}[/][grey])[/]")
 
+    ppid = os.getppid()
     elapsed = get_session_elapsed()
+    idle = is_process_idle(ppid)
+    state_label = "[dim]idle[/]" if idle else "[green]active[/]"
+
     if elapsed:
-        ppid = os.getppid()
-        line2_parts.append(f"[green]{elapsed}[/] [dim]pid:{ppid}[/]")
+        line2_parts.append(f"running: [green]{elapsed}[/] {state_label} [dim]pid:{ppid}[/]")
 
     if SHOW_SESSION_ID:
         session_id = data.get("session_id", "")
         if session_id:
-            line2_parts.append(f"[dim]{session_id}[/]")
+            line2_parts.append(f"[dim]sid:{session_id}[/]")
 
     return " ".join(line1_parts), " ".join(line2_parts)
 
@@ -220,6 +223,19 @@ def get_session_elapsed() -> str | None:
         return raw
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
         return None
+
+
+def is_process_idle(pid: int) -> bool:
+    """Check if process is idle (CPU < 1%)."""
+    try:
+        result = subprocess.run(
+            ["ps", "-p", str(pid), "-o", "%cpu="],
+            capture_output=True, text=True, timeout=2,
+        )
+        cpu = float(result.stdout.strip().replace(",", "."))
+        return cpu < 1.0
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
+        return False
 
 
 def is_git_dirty() -> bool:
