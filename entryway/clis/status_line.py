@@ -273,7 +273,16 @@ def get_idle_duration(transcript_path: str) -> str | None:
 
 
 def get_custom_title(transcript_path: str) -> str | None:
-    """Get user-set session title from JSONL transcript (last custom-title wins)."""
+    """Get user-set session title. Checks sidecar first, then JSONL transcript."""
+    tp = Path(transcript_path)
+    sidecar = tp.parent / tp.stem / "custom-title.json"
+    try:
+        if sidecar.exists():
+            data = json.loads(sidecar.read_text(encoding="utf-8"))
+            if title := data.get("customTitle"):
+                return title
+    except (OSError, json.JSONDecodeError):
+        pass
     try:
         result = subprocess.run(
             ["tail", "-200", transcript_path],
