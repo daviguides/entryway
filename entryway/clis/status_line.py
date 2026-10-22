@@ -144,12 +144,13 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     version = data.get("version", "") if SHOW_VERSION else None
     ppid = os.getppid()
     session_meta = get_session_meta(ppid)
-    session_name = session_meta.get("name")
+    transcript_path = data.get("transcript_path")
+    session_name = (
+        get_custom_title(transcript_path) if transcript_path else None
+    ) or session_meta.get("name")
 
     line1_parts = []
     line2_parts = []
-
-    pass  # session_name moved to line 2
 
     line1_parts.append(f"{SEP}[blue]{dir_name}[/]")
 
@@ -177,7 +178,6 @@ def generate_status_line(data: dict) -> tuple[str, str]:
     line1_parts.append(f"[grey]([/][blue]{model}[/][grey])[/]")
 
     elapsed = get_session_elapsed()
-    transcript_path = data.get("transcript_path")
     status = session_meta.get("status", "unknown")
     if status == "busy":
         state_label = "[green]active[/]"
@@ -268,6 +268,25 @@ def get_idle_duration(transcript_path: str) -> str | None:
         hours = minutes // 60
         mins = minutes % 60
         return f"{hours}h{mins}m"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, json.JSONDecodeError, ValueError):
+        return None
+
+
+def get_custom_title(transcript_path: str) -> str | None:
+    """Get user-set session title from JSONL transcript (last custom-title wins)."""
+    try:
+        result = subprocess.run(
+            ["tail", "-200", transcript_path],
+            capture_output=True, text=True, timeout=2,
+        )
+        if not result.stdout.strip():
+            return None
+        title = None
+        for line in result.stdout.strip().split("\n"):
+            entry = json.loads(line)
+            if entry.get("type") == "custom-title":
+                title = entry.get("customTitle")
+        return title
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError, json.JSONDecodeError, ValueError):
         return None
 
