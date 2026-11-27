@@ -103,13 +103,13 @@ def smart_path(cwd: str) -> str:
 
 def get_usage_color(percentage: float) -> str:
     """Get Rich color based on context window usage."""
-    if percentage < 50:
+    if percentage < 30:
         return "green"
-    if percentage < 75:
+    if percentage < 45:
         return "yellow"
-    if percentage < 90:
+    if percentage < 60:
         return "red"
-    return "bold red"
+    return "bold purple"
 
 
 def create_progress_bar(percentage: float) -> str:
